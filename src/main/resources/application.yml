@@ -1,0 +1,15 @@
+server:
+  port: 3000
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/readykids
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      continue-on-error: true
