@@ -1,5 +1,7 @@
 server:
   port: ${PORT:3000}
+  tomcat:
+    max-http-form-post-size: 1048576
 
 spring:
   datasource:
@@ -13,3 +15,7 @@ spring:
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
       continue-on-error: true
+  servlet:
+    multipart:
+      max-request-size: 1MB
+      max-file-size: 1MB

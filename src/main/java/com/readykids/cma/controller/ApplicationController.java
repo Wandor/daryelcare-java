@@ -37,6 +37,32 @@ public class ApplicationController {
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody JsonNode body) throws SQLException {
+        JsonNode personal = body.path("personal");
+
+        String firstName = personal.path("firstName").asText("");
+        String lastName = personal.path("lastName").asText("");
+        String email = personal.path("email").asText("");
+
+        if (firstName.isEmpty() || firstName.length() > 200) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "First name is required and must not exceed 200 characters"));
+        }
+
+        if (lastName.isEmpty() || lastName.length() > 200) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Last name is required and must not exceed 200 characters"));
+        }
+
+        if (email.isEmpty() || email.length() > 254) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Email is required and must not exceed 254 characters"));
+        }
+
+        if (!email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid email format"));
+        }
+
         String id = service.createApplication(body);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("id", id, "message", "Application submitted successfully"));
@@ -44,6 +70,22 @@ public class ApplicationController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable String id, @RequestBody JsonNode body) throws SQLException {
+        if (body.has("stage")) {
+            String stage = body.get("stage").asText("");
+            String[] validStages = {"new", "form-submitted", "checks", "review", "approved", "blocked", "registered"};
+            boolean isValid = false;
+            for (String validStage : validStages) {
+                if (validStage.equals(stage)) {
+                    isValid = true;
+                    break;
+                }
+            }
+            if (!isValid) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid stage value"));
+            }
+        }
+
         boolean updated = service.updateApplication(id, body);
         if (!updated) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -70,6 +112,24 @@ public class ApplicationController {
         if (event == null || event.isEmpty()) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Event text is required"));
+        }
+
+        if (event.length() > 2000) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Event text must not exceed 2000 characters"));
+        }
+
+        String[] validTypes = {"action", "complete", "alert", "note"};
+        boolean isValidType = false;
+        for (String validType : validTypes) {
+            if (validType.equals(type)) {
+                isValidType = true;
+                break;
+            }
+        }
+        if (!isValidType) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid type value"));
         }
 
         var entry = service.addTimelineEvent(id, event, type);

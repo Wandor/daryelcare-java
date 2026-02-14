@@ -30,6 +30,15 @@ public class ApplicationService {
         this.mapper = mapper;
     }
 
+    private String escapeHtml(String input) {
+        if (input == null) return null;
+        return input.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#x27;");
+    }
+
     private String generateId(long seqVal) {
         int year = LocalDate.now().getYear();
         return String.format("RK-%d-%05d", year, seqVal);
@@ -357,10 +366,10 @@ public class ApplicationService {
         jdbc.update(sql,
                 id,
                 textOrNull(personal.path("title")),
-                personal.path("firstName").asText(""),
+                escapeHtml(personal.path("firstName").asText("")),
                 textOrNull(personal.path("middleNames")),
-                personal.path("lastName").asText(""),
-                personal.path("email").asText(""),
+                escapeHtml(personal.path("lastName").asText("")),
+                escapeHtml(personal.path("email").asText("")),
                 textOrNull(personal.path("phone")),
                 textOrNull(personal.path("dob")),
                 textOrNull(personal.path("gender")),
@@ -505,13 +514,14 @@ public class ApplicationService {
 
     public Map<String, Object> addTimelineEvent(String id, String event, String type) {
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+        String escapedEvent = escapeHtml(event);
         jdbc.update(
                 "INSERT INTO timeline_events (application_id, event, type, created_at) VALUES (?, ?, ?, ?)",
-                id, event, type, now);
+                id, escapedEvent, type, now);
 
         return Map.of(
                 "application_id", id,
-                "event", event,
+                "event", escapedEvent,
                 "type", type,
                 "created_at", formatDatetime(now)
         );
